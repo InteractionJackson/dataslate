@@ -21,7 +21,7 @@ On a phone, use "Add to Home Screen" to run it full screen.
 
 ## Assets
 
-`assets/` must contain these exports from the Figma file:
+`assets/` holds these exports from the Figma file. The minus and menu icons are tinted #949494 in CSS, as their Figma instances are.
 
 | File           | Figma node                                           |
 | -------------- | ---------------------------------------------------- |
@@ -30,4 +30,3 @@ On a phone, use "Add to Home Screen" to run it full screen.
 | `subtract.svg` | 1:40 `Interface-Essential / Remove/Add / subtract`   |
 | `menu.svg`     | 1:197 `Interface-Essential / Menu / navigation-menu` |
 
-If an icon is missing, the app shows a text glyph (+ / − / ☰) instead. If the skull is missing, its slot is left empty.

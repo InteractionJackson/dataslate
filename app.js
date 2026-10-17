@@ -69,25 +69,6 @@
   const toastText = toast.querySelector("[data-toast-text]");
   let toastTimer;
 
-  // Icon assets come from Figma; if one is missing, show a text glyph instead of an empty button.
-  document.querySelectorAll("img[data-fallback]").forEach((img) => {
-    const swap = () => {
-      const glyph = document.createElement("span");
-      glyph.className = "glyph";
-      glyph.setAttribute("aria-hidden", "true");
-      glyph.textContent = img.dataset.fallback;
-      img.replaceWith(glyph);
-    };
-    if (img.complete && img.naturalWidth === 0) swap();
-    else img.addEventListener("error", swap, { once: true });
-  });
-
-  // No sensible text stand-in for the brand mark: keep its slot, hide the broken-image box.
-  const mark = document.querySelector(".slate__mark");
-  const hideMark = () => mark.classList.add("is-missing");
-  if (mark.complete && mark.naturalWidth === 0) hideMark();
-  else mark.addEventListener("error", hideMark, { once: true });
-
   // ---------- Render ----------
 
   function render() {

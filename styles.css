@@ -11,6 +11,7 @@
   --btn-bg: rgba(68, 68, 68, 0.3);
   --btn-solid: #444444;
   --btn-border: #000000;
+  --icon-secondary: #949494;
   --danger: #ff5c5c;
 
   --gutter: 16px;
@@ -83,10 +84,6 @@ button {
   width: 72px;
   height: 72px;
   display: block;
-}
-
-.slate__mark.is-missing {
-  visibility: hidden;
 }
 
 .slate__row {
@@ -197,6 +194,7 @@ button {
 }
 
 .step--minus {
+  color: var(--icon-secondary);
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   -webkit-backdrop-filter: blur(10px);
@@ -209,16 +207,28 @@ button {
   color: #000;
 }
 
-.step img,
-.icon-btn img {
+/* Icons are the Figma SVGs used as masks, so instances can take the colour Figma overrides them with. */
+.icon {
   display: block;
+  width: 18px;
+  height: 18px;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
 }
 
-/* Shown only when an icon asset fails to load (see app.js). */
-.glyph {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
+.icon--add {
+  --icon: url("assets/add.svg");
+}
+
+.icon--subtract {
+  --icon: url("assets/subtract.svg");
+}
+
+.icon--menu {
+  --icon: url("assets/menu.svg");
+  width: 24px;
+  height: 24px;
 }
 
 .icon-btn {
@@ -228,6 +238,7 @@ button {
   align-items: center;
   justify-content: center;
   padding: 12px 16px;
+  color: var(--icon-secondary);
   background: var(--btn-solid);
   border: 1px solid var(--btn-border);
   border-radius: var(--radius-pill);
