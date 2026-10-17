@@ -70,16 +70,22 @@ button {
 }
 
 .slate__header {
-  display: flex;
+  /* Equal side columns keep the mark centred whatever width the Reset button takes. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  min-height: 72px;
   padding: 0 8px 16px;
   flex: none;
 }
 
-.slate__leading {
-  width: 56px;
-  height: 56px;
+.slate__header > .slate__mark {
+  grid-column: 2;
+}
+
+.slate__header > .pill-btn {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .slate__mark {
@@ -271,93 +277,31 @@ button {
   flex: none;
 }
 
-.icon-btn {
-  width: 56px;
+.pill-btn {
   height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 16px;
-  color: var(--icon-secondary);
+  min-width: 56px;
+  padding: 0 20px;
+  color: var(--label);
   background: var(--btn-solid);
   border: 1px solid var(--btn-border);
   border-radius: var(--radius-pill);
-}
-
-.step:focus-visible,
-.icon-btn:focus-visible,
-.sheet__item:focus-visible,
-.toast__action:focus-visible {
-  outline: 2px solid var(--value);
-  outline-offset: 2px;
-}
-
-/* ---------- Menu sheet ---------- */
-
-.sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.sheet[hidden] {
-  display: none;
-}
-
-.sheet__scrim {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.sheet__panel {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px var(--gutter) max(16px, env(safe-area-inset-bottom));
-  background: var(--bg-top);
-  border: 1px solid var(--card-border);
-  border-bottom: 0;
-  border-radius: 16px 16px 0 0;
-  animation: sheet-in 180ms ease-out;
-}
-
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-}
-
-.sheet__item {
-  height: 56px;
-  border-radius: var(--radius-card);
-  background: var(--btn-bg);
-  border: 1px solid var(--card-border);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: -0.36px;
   text-transform: uppercase;
+  transition: opacity 120ms ease-out;
 }
 
-.sheet__item:disabled {
+.pill-btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
-.sheet__item--danger {
-  color: var(--danger);
-}
-
-.sheet__item--cancel {
-  background: transparent;
-  border-color: transparent;
-  color: var(--label);
+.step:focus-visible,
+.pill-btn:focus-visible,
+.toast__action:focus-visible {
+  outline: 2px solid var(--value);
+  outline-offset: 2px;
 }
 
 /* ---------- Toast ---------- */
@@ -451,9 +395,8 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .step,
-  .sheet__panel {
+  .pill-btn {
     transition: none;
-    animation: none;
   }
 
   .card::before {

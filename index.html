@@ -22,11 +22,8 @@
   <body>
     <main class="slate">
       <header class="slate__header">
-        <div class="slate__leading" aria-hidden="true"></div>
         <img class="slate__mark" src="assets/skull.svg" width="72" height="72" alt="" />
-        <button class="icon-btn" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog">
-          <svg class="icon" aria-hidden="true" focusable="false" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M0.5 3.5C0.5 2.94772 0.947715 2.5 1.5 2.5H22.5C23.0523 2.5 23.5 2.94772 23.5 3.5V4.5C23.5 5.05228 23.0523 5.5 22.5 5.5H1.5C0.947715 5.5 0.5 5.05228 0.5 4.5V3.5Z" fill="currentColor"/> <path d="M0.5 11.5C0.5 10.9477 0.947715 10.5 1.5 10.5H22.5C23.0523 10.5 23.5 10.9477 23.5 11.5V12.5C23.5 13.0523 23.0523 13.5 22.5 13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5V11.5Z" fill="currentColor"/> <path d="M0.5 19.5C0.5 18.9477 0.947715 18.5 1.5 18.5H22.5C23.0523 18.5 23.5 18.9477 23.5 19.5V20.5C23.5 21.0523 23.0523 21.5 22.5 21.5H1.5C0.947715 21.5 0.5 21.0523 0.5 20.5V19.5Z" fill="currentColor"/> </svg>
-        </button>
+        <button class="pill-btn" type="button" data-action="reset">Reset</button>
       </header>
 
       <div class="slate__row slate__row--top">
@@ -64,15 +61,6 @@
         </section>
       </div>
     </main>
-
-    <div class="sheet" data-sheet hidden>
-      <div class="sheet__scrim" data-action="close-menu"></div>
-      <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Game menu">
-        <button class="sheet__item" type="button" data-action="undo">Undo last change</button>
-        <button class="sheet__item sheet__item--danger" type="button" data-action="new-game">New game</button>
-        <button class="sheet__item sheet__item--cancel" type="button" data-action="close-menu">Cancel</button>
-      </div>
-    </div>
 
     <div class="toast" data-toast role="status" aria-live="polite" hidden>
       <span data-toast-text></span>

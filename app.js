@@ -2,7 +2,6 @@
   "use strict";
 
   const STORAGE_KEY = "data-slate:v1";
-  const HISTORY_LIMIT = 50;
 
   const COUNTERS = {
     round: { min: 1, max: 5, initial: 1, name: "Round" },
@@ -41,7 +40,7 @@
   }
 
   let state = load();
-  const history = [];
+  let beforeReset = null;
 
   // ---------- DOM ----------
 
@@ -63,8 +62,7 @@
   });
 
   const totalEl = document.querySelector("[data-total]");
-  const sheet = document.querySelector("[data-sheet]");
-  const undoItem = sheet.querySelector('[data-action="undo"]');
+  const resetBtn = document.querySelector('[data-action="reset"]');
   const toast = document.querySelector("[data-toast]");
   const toastText = toast.querySelector("[data-toast-text]");
   let toastTimer;
@@ -78,14 +76,12 @@
       el.plus.disabled = state[key] >= COUNTERS[key].max;
     }
     totalEl.textContent = state.primary + state.secondary;
-    undoItem.disabled = history.length === 0;
+    resetBtn.disabled = Object.keys(COUNTERS).every((key) => state[key] === COUNTERS[key].initial);
   }
 
   // ---------- Actions ----------
 
   function commit(next) {
-    history.push(state);
-    if (history.length > HISTORY_LIMIT) history.shift();
     state = next;
     save();
     render();
@@ -94,33 +90,24 @@
   function step(key, delta) {
     const value = clamp(key, state[key] + delta);
     if (value === state[key]) return;
+    beforeReset = null;
+    hideToast();
     commit({ ...state, [key]: value });
     if (navigator.vibrate) navigator.vibrate(8);
   }
 
-  function undo() {
-    const previous = history.pop();
-    if (!previous) return;
-    state = previous;
-    save();
-    render();
-    hideToast();
-  }
-
-  function newGame() {
+  // Reset acts immediately; the toast's Undo is the safety net instead of a confirm dialog.
+  function reset() {
+    beforeReset = state;
     commit(initialState());
-    closeMenu();
-    showToast("New game started");
+    showToast("Scores reset");
   }
 
-  function openMenu() {
-    sheet.hidden = false;
-    sheet.querySelector(".sheet__item:not(:disabled)").focus();
-  }
-
-  function closeMenu() {
-    sheet.hidden = true;
-    document.querySelector('[data-action="open-menu"]').focus();
+  function undoReset() {
+    if (!beforeReset) return;
+    commit(beforeReset);
+    beforeReset = null;
+    hideToast();
   }
 
   function showToast(message) {
@@ -147,24 +134,13 @@
     const actionEl = event.target.closest("[data-action]");
     if (!actionEl) return;
     switch (actionEl.dataset.action) {
-      case "open-menu":
-        openMenu();
-        break;
-      case "close-menu":
-        closeMenu();
+      case "reset":
+        reset();
         break;
       case "undo":
-        undo();
-        if (!sheet.hidden) closeMenu();
-        break;
-      case "new-game":
-        newGame();
+        undoReset();
         break;
     }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !sheet.hidden) closeMenu();
   });
 
   render();
