@@ -2,7 +2,7 @@
 :root {
   --bg-top: #181818;
   --bg-bottom: #121212;
-  --card-bg: rgba(26, 26, 26, 0.2);
+  --card-bg: #1d1d1d;
   --card-border: #3a3a3a;
   --label: #e6e6e6;
   --value: #ffffff;
@@ -13,6 +13,8 @@
   --btn-border: #000000;
   --icon-secondary: #949494;
   --danger: #ff5c5c;
+  /* Neutral, not lime: the accent stays reserved for things you can tap. */
+  --glow: rgba(255, 255, 255, 0.22);
 
   --gutter: 16px;
   --gap: 16px;
@@ -100,6 +102,7 @@ button {
 /* ---------- Card ---------- */
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -107,6 +110,61 @@ button {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-card);
+}
+
+/* Ambient glow: a soft highlight that drifts slowly around each tile's stroke. */
+@property --glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--glow) 45deg,
+    transparent 100deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+  animation: glow-drift 14s linear infinite;
+  animation-delay: var(--glow-delay, 0s);
+}
+
+/* Offset each tile so the highlights never move in lockstep. */
+[data-counter="cp"] {
+  --glow-delay: -3s;
+}
+
+.card--total {
+  --glow-delay: -6s;
+}
+
+[data-counter="primary"] {
+  --glow-delay: -9s;
+}
+
+[data-counter="secondary"] {
+  --glow-delay: -12s;
+}
+
+@keyframes glow-drift {
+  to {
+    --glow-angle: 360deg;
+  }
 }
 
 .card__label {
@@ -414,5 +472,9 @@ button {
   .sheet__panel {
     transition: none;
     animation: none;
+  }
+
+  .card::before {
+    display: none;
   }
 }
