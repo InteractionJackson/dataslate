@@ -1,13 +1,12 @@
 # dataslate
 
 Keep score in your Warhammer 40k games. A mobile-first score keeper built from the Figma frame `data-slate-1` (node 1:124).
-Mobile-first score keeper built from the Figma frame `data-slate-1` (node 1:124).
 Plain HTML/CSS/JS with no build step and no dependencies.
 
 ## Run
 
 ```bash
-python3 -m http.server 8000 
+python3 -m http.server 8000
 # open http://localhost:8000 (or your machine's LAN IP from a phone)
 ```
 
