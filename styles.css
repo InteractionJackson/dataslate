@@ -265,28 +265,10 @@ button {
   color: #000;
 }
 
-/* Icons are the Figma SVGs used as masks, so instances can take the colour Figma overrides them with. */
+/* Icons are the Figma SVGs inlined with fill="currentColor", so each button sets their colour. */
 .icon {
   display: block;
-  width: 18px;
-  height: 18px;
-  background-color: currentColor;
-  -webkit-mask: var(--icon) center / contain no-repeat;
-  mask: var(--icon) center / contain no-repeat;
-}
-
-.icon--add {
-  --icon: url("assets/add.svg");
-}
-
-.icon--subtract {
-  --icon: url("assets/subtract.svg");
-}
-
-.icon--menu {
-  --icon: url("assets/menu.svg");
-  width: 24px;
-  height: 24px;
+  flex: none;
 }
 
 .icon-btn {

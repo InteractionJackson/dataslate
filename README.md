@@ -21,7 +21,7 @@ On a phone, use "Add to Home Screen" to run it full screen.
 
 ## Assets
 
-`assets/` holds these exports from the Figma file. The minus and menu icons are tinted #949494 in CSS, as their Figma instances are.
+`assets/` holds these exports from the Figma file. The add, subtract and menu icons are inlined in `index.html` with `fill="currentColor"`, so they work when the page is opened from disk and take their colour from the button (#949494 on the dark buttons, as their Figma instances are). If you replace one of these files, update its inline copy too.
 
 | File           | Figma node                                           |
 | -------------- | ---------------------------------------------------- |
