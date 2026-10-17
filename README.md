@@ -12,6 +12,8 @@ python3 -m http.server 8000
 
 On a phone, use "Add to Home Screen" to run it full screen.
 
+When you change `styles.css` or `app.js`, bump the `?v=` number on its link in `index.html`. Otherwise browsers can pair the new page with a cached old stylesheet or script.
+
 ## Behaviour
 
 - Round runs 1–5. Command points, Primary and Secondary run 0–99. Buttons disable at the limits.
