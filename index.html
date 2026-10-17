@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#181818" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Data Slate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="slate">
+      <header class="slate__header">
+        <div class="slate__leading" aria-hidden="true"></div>
+        <img class="slate__mark" src="assets/skull.svg" width="72" height="72" alt="" />
+        <button class="icon-btn" type="button" data-action="open-menu" aria-label="Menu" aria-haspopup="dialog">
+          <img src="assets/menu.svg" width="24" height="24" alt="" data-fallback="☰" />
+        </button>
+      </header>
+
+      <div class="slate__row slate__row--top">
+        <section class="card" data-counter="round" aria-labelledby="lbl-round">
+          <h2 class="card__label" id="lbl-round">Round</h2>
+          <p class="card__value card__value--sm" aria-live="polite">
+            <span data-value>1</span><span class="card__of">/<span data-max>5</span></span>
+          </p>
+          <div class="stepper"></div>
+        </section>
+
+        <section class="card" data-counter="cp" aria-labelledby="lbl-cp">
+          <h2 class="card__label" id="lbl-cp">Command points</h2>
+          <p class="card__value card__value--sm" aria-live="polite"><span data-value>0</span></p>
+          <div class="stepper"></div>
+        </section>
+      </div>
+
+      <section class="card card--total" aria-labelledby="lbl-total">
+        <h2 class="card__label" id="lbl-total">Total points</h2>
+        <p class="card__value card__value--xl" aria-live="polite"><span data-total>0</span></p>
+      </section>
+
+      <div class="slate__row slate__row--bottom">
+        <section class="card" data-counter="primary" aria-labelledby="lbl-primary">
+          <h2 class="card__label" id="lbl-primary">Primary</h2>
+          <p class="card__value card__value--md" aria-live="polite"><span data-value>0</span></p>
+          <div class="stepper"></div>
+        </section>
+
+        <section class="card" data-counter="secondary" aria-labelledby="lbl-secondary">
+          <h2 class="card__label" id="lbl-secondary">Secondary</h2>
+          <p class="card__value card__value--md" aria-live="polite"><span data-value>0</span></p>
+          <div class="stepper"></div>
+        </section>
+      </div>
+    </main>
+
+    <div class="sheet" data-sheet hidden>
+      <div class="sheet__scrim" data-action="close-menu"></div>
+      <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Game menu">
+        <button class="sheet__item" type="button" data-action="undo">Undo last change</button>
+        <button class="sheet__item sheet__item--danger" type="button" data-action="new-game">New game</button>
+        <button class="sheet__item sheet__item--cancel" type="button" data-action="close-menu">Cancel</button>
+      </div>
+    </div>
+
+    <div class="toast" data-toast role="status" aria-live="polite" hidden>
+      <span data-toast-text></span>
+      <button class="toast__action" type="button" data-action="undo">Undo</button>
+    </div>
+
+    <template id="stepper-tpl">
+      <button class="step step--minus" type="button" data-step="-1">
+        <img src="assets/subtract.svg" width="18" height="18" alt="" data-fallback="−" />
+      </button>
+      <button class="step step--plus" type="button" data-step="1">
+        <img src="assets/add.svg" width="18" height="18" alt="" data-fallback="+" />
+      </button>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
