@@ -129,7 +129,7 @@
     beforeReset = null;
     hideToast();
     commit({ ...state, [key]: value });
-    if (key === "round" || (key === "cp" && delta > 0)) glitch();
+    if (key !== "cp" || delta > 0) glitch();
     if (navigator.vibrate) navigator.vibrate(8);
   }
 
