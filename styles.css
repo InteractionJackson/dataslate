@@ -8,7 +8,6 @@
   --label: #e6e6e6;
   --value: #ffffff;
   --accent: #11ff00;
-  --accent-border: rgba(255, 255, 255, 0.67);
   --btn-bg: rgba(68, 68, 68, 0.3);
   --btn-solid: #444444;
   --btn-border: #000000;
@@ -151,9 +150,17 @@ button {
   min-width: 0;
 }
 
+/* Holds the shared skull shapes; takes no space. */
+.skull-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 /* ---------- Skull glitch ----------
-   A short burst on big state changes (round, reset, undo), never on a timer.
-   The split uses drop-shadows and the slices are <img> copies rather than masks, so it works when opened from disk. */
+   A short burst on score changes (see glitch() in app.js), never on a timer.
+   The split uses drop-shadows and the slices are copies of the inline skull rather than masks, so it works when opened from disk. */
 
 .glitch {
   position: relative;
@@ -406,12 +413,12 @@ button {
 .step--minus {
   color: var(--icon-secondary);
   background: var(--btn-bg);
-  border: 1px solid var(--btn-border);
+  border: 0;
 }
 
 .step--plus {
   background: var(--accent);
-  border: 1px solid var(--accent-border);
+  border: 0;
   color: #000;
 }
 
@@ -427,7 +434,7 @@ button {
   padding: 0 20px;
   color: var(--label);
   background: var(--btn-solid);
-  border: 1px solid var(--btn-border);
+  border: 0;
   border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 700;
