@@ -31,3 +31,5 @@ When you change `styles.css` or `app.js`, bump the `?v=` number on its link in `
 | `add.svg`      | 1:36 `Interface-Essential / Remove/Add / add`        |
 | `subtract.svg` | 1:40 `Interface-Essential / Remove/Add / subtract`   |
 
+`favicon-32.png` (browser tab) and `apple-touch-icon.png` (180px, iPhone home screen) are resized from a 400px skull icon on `#181818`. Regenerate both if the skull changes.
+
