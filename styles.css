@@ -79,7 +79,7 @@ button {
   flex: none;
 }
 
-.slate__header > .slate__mark {
+.slate__header > .glitch {
   grid-column: 2;
 }
 
@@ -103,6 +103,103 @@ button {
 .slate__row > .card {
   flex: 1 1 0;
   min-width: 0;
+}
+
+/* ---------- Skull glitch ----------
+   A short burst on big state changes (round, reset, undo), never on a timer.
+   The split uses drop-shadows and the slices are <img> copies rather than masks, so it works when opened from disk. */
+
+.glitch {
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 72px;
+}
+
+.glitch__slice {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.glitch.is-glitching > .slate__mark {
+  animation: glitch-split 320ms linear;
+}
+
+.glitch.is-glitching > .glitch__slice {
+  visibility: visible;
+  animation: glitch-slice-a 320ms steps(1, end);
+}
+
+.glitch.is-glitching > .glitch__slice + .glitch__slice {
+  animation-name: glitch-slice-b;
+}
+
+@keyframes glitch-split {
+  0%,
+  100% {
+    filter: none;
+  }
+  10% {
+    filter: drop-shadow(-3px 0 rgba(255, 0, 60, 0.8)) drop-shadow(3px 0 rgba(0, 255, 255, 0.8));
+  }
+  40% {
+    filter: drop-shadow(2px 0 rgba(255, 0, 60, 0.8)) drop-shadow(-2px 0 rgba(0, 255, 255, 0.8));
+  }
+  70% {
+    filter: drop-shadow(-1px 0 rgba(255, 0, 60, 0.6)) drop-shadow(1px 0 rgba(0, 255, 255, 0.6));
+  }
+}
+
+@keyframes glitch-slice-a {
+  0% {
+    clip-path: inset(12% 0 70% 0);
+    transform: translateX(-6px);
+    filter: drop-shadow(-2px 0 rgba(255, 0, 60, 0.9));
+  }
+  25% {
+    clip-path: inset(55% 0 30% 0);
+    transform: translateX(5px);
+  }
+  50% {
+    clip-path: inset(30% 0 58% 0);
+    transform: translateX(-3px);
+  }
+  75% {
+    clip-path: inset(78% 0 8% 0);
+    transform: translateX(4px);
+  }
+  100% {
+    clip-path: inset(100% 0 0 0);
+    transform: none;
+  }
+}
+
+@keyframes glitch-slice-b {
+  0% {
+    clip-path: inset(62% 0 22% 0);
+    transform: translateX(5px);
+    filter: drop-shadow(2px 0 rgba(0, 255, 255, 0.9));
+  }
+  25% {
+    clip-path: inset(20% 0 66% 0);
+    transform: translateX(-7px);
+  }
+  50% {
+    clip-path: inset(70% 0 14% 0);
+    transform: translateX(3px);
+  }
+  75% {
+    clip-path: inset(40% 0 48% 0);
+    transform: translateX(-2px);
+  }
+  100% {
+    clip-path: inset(100% 0 0 0);
+    transform: none;
+  }
 }
 
 /* ---------- Card ---------- */
@@ -401,5 +498,14 @@ button {
 
   .card::before {
     display: none;
+  }
+
+  .glitch.is-glitching > * {
+    animation: none;
+    visibility: hidden;
+  }
+
+  .glitch.is-glitching > .slate__mark {
+    visibility: visible;
   }
 }

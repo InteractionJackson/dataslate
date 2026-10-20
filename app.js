@@ -61,6 +61,7 @@
     el.textContent = COUNTERS.round.max;
   });
 
+  const glitchEl = document.querySelector("[data-glitch]");
   const totalEl = document.querySelector("[data-total]");
   const resetBtn = document.querySelector('[data-action="reset"]');
   const toast = document.querySelector("[data-toast]");
@@ -79,6 +80,17 @@
     resetBtn.disabled = Object.keys(COUNTERS).every((key) => state[key] === COUNTERS[key].initial);
   }
 
+  // Restart the skull's burst; the class comes off when the animation ends so the next one can play.
+  function glitch() {
+    glitchEl.classList.remove("is-glitching");
+    void glitchEl.offsetWidth;
+    glitchEl.classList.add("is-glitching");
+  }
+
+  glitchEl.addEventListener("animationend", (event) => {
+    if (event.target.classList.contains("slate__mark")) glitchEl.classList.remove("is-glitching");
+  });
+
   // ---------- Actions ----------
 
   function commit(next) {
@@ -93,6 +105,7 @@
     beforeReset = null;
     hideToast();
     commit({ ...state, [key]: value });
+    if (key === "round") glitch();
     if (navigator.vibrate) navigator.vibrate(8);
   }
 
@@ -100,12 +113,14 @@
   function reset() {
     beforeReset = state;
     commit(initialState());
+    glitch();
     showToast("Scores reset");
   }
 
   function undoReset() {
     if (!beforeReset) return;
     commit(beforeReset);
+    glitch();
     beforeReset = null;
     hideToast();
   }

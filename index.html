@@ -17,12 +17,17 @@
       href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <main class="slate">
       <header class="slate__header">
-        <img class="slate__mark" src="assets/skull.svg" width="72" height="72" alt="" />
+        <!-- The two slice copies only show during a glitch burst; see .glitch in styles.css. -->
+        <span class="glitch" data-glitch>
+          <img class="slate__mark" src="assets/skull.svg" width="72" height="72" alt="" />
+          <img class="glitch__slice" src="assets/skull.svg" width="72" height="72" alt="" />
+          <img class="glitch__slice" src="assets/skull.svg" width="72" height="72" alt="" />
+        </span>
         <button class="pill-btn" type="button" data-action="reset">Reset</button>
       </header>
 
@@ -76,6 +81,6 @@
       </button>
     </template>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
   </body>
 </html>
