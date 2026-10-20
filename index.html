@@ -19,16 +19,22 @@
       href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=10" />
+    <link rel="stylesheet" href="styles.css?v=11" />
   </head>
   <body>
+    <!-- assets/skull.svg inlined once, so app.js can change the eyes on every copy of the skull at once. -->
+    <svg class="skull-defs" aria-hidden="true" focusable="false" width="0" height="0">
+      <path id="skull-outline" d="M22.0529 59.4592C11.2183 57.7859 3.9238 49.4197 3.11925 37.8688C2.10016 26.156 7.67834 13.7956 17.3329 7.69627C23.5011 3.75603 31.0102 2.35266 38.1438 3.27025C48.1738 3.81001 57.882 10.1252 63.7283 19.3551C69.3602 28.2611 70.6474 37.2211 66.6247 46.6129C63.2992 54.3854 57.1847 58.4876 48.6565 59.783C47.9725 62.5609 48.6754 67.9642 44.1469 67.9642C39.6183 67.9642 39.5667 63.5745 39.6456 59.9989C39.2472 63.425 39.5383 67.9642 34.9256 67.7175C30.3375 67.7175 31.0969 63.0142 30.9565 60.5387C30.5325 63.8098 30.7487 68.2033 26.3719 68.2033C21.9188 68.2033 22.0969 63.0142 22.0529 59.4592Z" fill="none" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round" stroke="#11FF00" />
+      <path id="skull-eyes" d="M31.2261 45.4653C31.6552 50.1612 28.5443 54.0475 24.1461 54.3174C19.6943 54.5872 16.3152 51.5106 15.8861 46.9766C15.4034 42.2807 18.3534 38.1786 22.3225 37.6928C26.6134 37.207 30.7434 40.6075 31.2261 45.4653ZM55.5234 45.5193C55.3625 49.8374 51.9298 53.2378 47.5316 53.2918C43.348 53.3998 40.0225 50.4311 39.808 46.5448C39.5398 42.1188 43.0798 38.1786 46.888 37.7468C51.0716 37.261 55.738 40.6615 55.5234 45.5193Z" fill="#11FF00" />
+    </svg>
     <main class="slate">
       <header class="slate__header">
-        <!-- The two slice copies only show during a glitch burst; see .glitch in styles.css. -->
+        <!-- Each copy draws the shared skull shapes defined at the top of <body>.
+             The two slice copies only show during a glitch burst; see .glitch in styles.css. -->
         <span class="glitch" data-glitch>
-          <img class="slate__mark" src="assets/skull.svg?v=2" width="72" height="72" alt="" />
-          <img class="glitch__slice" src="assets/skull.svg?v=2" width="72" height="72" alt="" />
-          <img class="glitch__slice" src="assets/skull.svg?v=2" width="72" height="72" alt="" />
+          <svg class="slate__mark" aria-hidden="true" focusable="false" viewBox="0 0 72 72" width="72" height="72"><use href="#skull-outline" /><use href="#skull-eyes" /></svg>
+          <svg class="glitch__slice" aria-hidden="true" focusable="false" viewBox="0 0 72 72" width="72" height="72"><use href="#skull-outline" /><use href="#skull-eyes" /></svg>
+          <svg class="glitch__slice" aria-hidden="true" focusable="false" viewBox="0 0 72 72" width="72" height="72"><use href="#skull-outline" /><use href="#skull-eyes" /></svg>
         </span>
         <button class="pill-btn" type="button" data-action="reset">Reset</button>
       </header>
@@ -83,6 +89,6 @@
       </button>
     </template>
 
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
   </body>
 </html>

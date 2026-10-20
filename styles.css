@@ -150,9 +150,17 @@ button {
   min-width: 0;
 }
 
+/* Holds the shared skull shapes; takes no space. */
+.skull-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 /* ---------- Skull glitch ----------
-   A short burst on big state changes (round, reset, undo), never on a timer.
-   The split uses drop-shadows and the slices are <img> copies rather than masks, so it works when opened from disk. */
+   A short burst on score changes (see glitch() in app.js), never on a timer.
+   The split uses drop-shadows and the slices are copies of the inline skull rather than masks, so it works when opened from disk. */
 
 .glitch {
   position: relative;
