@@ -49,6 +49,62 @@ body {
   overscroll-behavior: none;
 }
 
+/* Static grain behind everything. The tiles are opaque, so it only shows in the gaps, margins and header.
+   app.js draws the noise tile into --noise once; the stepped jumps move it rather than redraw it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -128px;
+  z-index: 0;
+  background-image: var(--noise, none);
+  background-size: 128px 128px;
+  opacity: 0.05;
+  pointer-events: none;
+  animation: grain 0.6s steps(1, end) infinite;
+}
+
+/* The grain flares with the skull's burst so the two read as one event. */
+body:has(.glitch.is-glitching)::before {
+  animation:
+    grain 0.6s steps(1, end) infinite,
+    grain-spike 320ms linear;
+}
+
+.is-hidden body::before {
+  animation-play-state: paused;
+}
+
+@keyframes grain {
+  0% {
+    transform: translate(0, 0);
+  }
+  17% {
+    transform: translate(-37px, 22px);
+  }
+  33% {
+    transform: translate(51px, -61px);
+  }
+  50% {
+    transform: translate(-13px, 77px);
+  }
+  67% {
+    transform: translate(88px, 9px);
+  }
+  83% {
+    transform: translate(-70px, -45px);
+  }
+}
+
+@keyframes grain-spike {
+  0%,
+  60% {
+    opacity: 0.14;
+  }
+  100% {
+    opacity: 0.05;
+  }
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -59,6 +115,8 @@ button {
 /* ---------- Layout ---------- */
 
 .slate {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--gap);
@@ -498,6 +556,12 @@ button {
 
   .card::before {
     display: none;
+  }
+
+  /* Keep the grain as a still texture. */
+  body::before,
+  body:has(.glitch.is-glitching)::before {
+    animation: none;
   }
 
   .glitch.is-glitching > * {
