@@ -42,6 +42,30 @@
   let state = load();
   let beforeReset = null;
 
+  // ---------- Grain ----------
+
+  // One 128px tile of white specks at random strengths, drawn once and handed to the CSS as a data URL.
+  function paintGrain() {
+    const size = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const pixels = ctx.createImageData(size, size);
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 255;
+      pixels.data[i + 3] = Math.random() * 255;
+    }
+    ctx.putImageData(pixels, 0, 0);
+    document.documentElement.style.setProperty("--noise", `url(${canvas.toDataURL()})`);
+  }
+
+  paintGrain();
+
+  document.addEventListener("visibilitychange", () => {
+    document.documentElement.classList.toggle("is-hidden", document.hidden);
+  });
+
   // ---------- DOM ----------
 
   const stepperTpl = document.getElementById("stepper-tpl");
