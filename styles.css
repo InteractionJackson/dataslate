@@ -4,7 +4,7 @@
   --bg-bottom: #121212;
   /* #1d1d1d at 80%, so the background grain shows faintly through the tiles. */
   --card-bg: rgba(29, 29, 29, 0.8);
-  --card-border: #3a3a3a;
+  --card-border: #033300;
   --label: #e6e6e6;
   --value: #ffffff;
   --accent: #11ff00;
@@ -18,8 +18,8 @@
   --readout: var(--accent);
   --readout-glow: 0 0 12px rgba(17, 255, 0, 0.42);
   --card-inner-glow: inset 0 1px 20px rgba(17, 255, 0, 0.09);
-  /* Neutral, not green: the accent stays reserved for things you can tap. */
-  --glow: rgba(255, 255, 255, 0.22);
+  /* The highlight that drifts around each tile's stroke. */
+  --glow: #044200;
 
   --gutter: 16px;
   --gap: 16px;
