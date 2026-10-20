@@ -7,18 +7,18 @@
   --card-border: #3a3a3a;
   --label: #e6e6e6;
   --value: #ffffff;
-  --accent: #ccff00;
+  --accent: #11ff00;
   --accent-border: rgba(255, 255, 255, 0.67);
   --btn-bg: rgba(68, 68, 68, 0.3);
   --btn-solid: #444444;
   --btn-border: #000000;
   --icon-secondary: #949494;
   --danger: #ff5c5c;
-  /* Tile labels and numbers only; buttons keep their own colours. */
-  --readout: #11ff00;
+  /* Tile labels and numbers share the accent green; the glow, not the colour, sets them apart from buttons. */
+  --readout: var(--accent);
   --readout-glow: 0 0 12px rgba(17, 255, 0, 0.42);
   --card-inner-glow: inset 0 1px 20px rgba(17, 255, 0, 0.09);
-  /* Neutral, not lime: the accent stays reserved for things you can tap. */
+  /* Neutral, not green: the accent stays reserved for things you can tap. */
   --glow: rgba(255, 255, 255, 0.22);
 
   --gutter: 16px;
