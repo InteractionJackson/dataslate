@@ -3,7 +3,7 @@
   --bg-top: #181818;
   --bg-bottom: #121212;
   /* #1d1d1d at 80%, so the background grain shows faintly through the tiles. */
-  --card-bg: rgba(29, 29, 29, 0.8);
+  --card-bg: rgba(29, 29, 29, 0.4);
   --card-border: #033300;
   --label: #e6e6e6;
   --value: #ffffff;
