@@ -1,7 +1,12 @@
 (() => {
   "use strict";
 
+  const { glitch, react } = window.DataSlateFx;
+
   const STORAGE_KEY = "data-slate:v1";
+  // The room this device last joined ({ code }), so a reload or a locked phone drops back into it.
+  const ROOM_KEY = "data-slate:room";
+  const NAME_KEY = "data-slate:name";
 
   const COUNTERS = {
     round: { min: 1, max: 5, initial: 1, name: "Round" },
@@ -9,62 +14,72 @@
     primary: { min: 0, max: 99, initial: 0, name: "Primary" },
     secondary: { min: 0, max: 99, initial: 0, name: "Secondary" },
   };
+  // What a player owns in a room. Round is shared, so Reset and Undo leave it alone there.
+  const OWN_KEYS = ["cp", "primary", "secondary"];
 
   const initialState = () =>
     Object.fromEntries(Object.entries(COUNTERS).map(([key, c]) => [key, c.initial]));
 
   const clamp = (key, value) => Math.min(COUNTERS[key].max, Math.max(COUNTERS[key].min, value));
 
-  function load() {
+  const pick = (source, keys) => Object.fromEntries(keys.map((key) => [key, source[key]]));
+
+  function readStored(key) {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved && typeof saved === "object") {
-        const state = initialState();
-        for (const key of Object.keys(COUNTERS)) {
-          if (Number.isFinite(saved[key])) state[key] = clamp(key, saved[key]);
-        }
-        return state;
-      }
+      return JSON.parse(localStorage.getItem(key));
     } catch {
-      /* storage unavailable or corrupt: start fresh */
+      return null;
     }
-    return initialState();
   }
 
-  function save() {
+  function writeStored(key, value) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (value === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, JSON.stringify(value));
     } catch {
       /* private mode etc. — the game still works, it just won't survive a reload */
     }
   }
 
-  let state = load();
-  let beforeReset = null;
-
-  // ---------- Grain ----------
-
-  // One 128px tile of white specks at random strengths, drawn once and handed to the CSS as a data URL.
-  function paintGrain() {
-    const size = 128;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const pixels = ctx.createImageData(size, size);
-    for (let i = 0; i < pixels.data.length; i += 4) {
-      pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 255;
-      pixels.data[i + 3] = Math.random() * 255;
+  function load() {
+    const saved = readStored(STORAGE_KEY);
+    const state = initialState();
+    if (saved && typeof saved === "object") {
+      for (const key of Object.keys(COUNTERS)) {
+        if (Number.isFinite(saved[key])) state[key] = clamp(key, saved[key]);
+      }
     }
-    ctx.putImageData(pixels, 0, 0);
-    document.documentElement.style.setProperty("--noise", `url(${canvas.toDataURL()})`);
+    return state;
   }
 
-  paintGrain();
+  // The solo game. In a room the scores live in Firebase, and the solo game waits here for when you leave.
+  function save() {
+    writeStored(STORAGE_KEY, state);
+  }
 
-  document.addEventListener("visibilitychange", () => {
-    document.documentElement.classList.toggle("is-hidden", document.hidden);
-  });
+  let state = load();
+
+  // ---------- Rooms ----------
+
+  const params = new URLSearchParams(location.search);
+  // Rooms need Firebase (firebase-config.js) and a page served over http(s): ES modules don't load from file://.
+  const roomsAvailable =
+    location.protocol !== "file:" && (params.has("emulator") || Boolean(window.DATA_SLATE_FIREBASE?.apiKey));
+
+  // null in solo play. In a room: { api, code, seat, players, connected, loaded, stop }.
+  let room = null;
+  let roomApi;
+
+  // room.js pulls in Firebase, so it only loads once someone opens the Room sheet or follows a room link.
+  function loadRoomApi() {
+    roomApi ??= import("./room.js").catch((error) => {
+      roomApi = undefined;
+      throw error;
+    });
+    return roomApi;
+  }
+
+  const otherSeat = (seat) => (seat === "p1" ? "p2" : "p1");
 
   // ---------- DOM ----------
 
@@ -85,12 +100,25 @@
     el.textContent = COUNTERS.round.max;
   });
 
-  const glitchEl = document.querySelector("[data-glitch]");
   const totalEl = document.querySelector("[data-total]");
   const resetBtn = document.querySelector('[data-action="reset"]');
+  const roomBtn = document.querySelector('[data-action="room"]');
+  const roomLabel = roomBtn.querySelector("[data-room-label]");
+  const opponentEl = document.querySelector("[data-opponent]");
   const toast = document.querySelector("[data-toast]");
   const toastText = toast.querySelector("[data-toast-text]");
+  const undoBtn = toast.querySelector('[data-action="undo"]');
   let toastTimer;
+  let undoAction = null;
+
+  const sheet = document.querySelector("[data-sheet]");
+  const sheetTitle = sheet.querySelector("[data-sheet-title]");
+  const entryForm = sheet.querySelector("[data-sheet-entry]");
+  const nameInput = entryForm.elements.name;
+  const codeInput = entryForm.elements.code;
+  const joinBtn = entryForm.querySelector('[value="join"]');
+  const sheetError = sheet.querySelector("[data-sheet-error]");
+  const roomStatus = sheet.querySelector("[data-room-status]");
 
   // ---------- Render ----------
 
@@ -101,102 +129,72 @@
       el.plus.disabled = state[key] >= COUNTERS[key].max;
     }
     totalEl.textContent = state.primary + state.secondary;
-    resetBtn.disabled = Object.keys(COUNTERS).every((key) => state[key] === COUNTERS[key].initial);
+    const resettable = room ? OWN_KEYS : Object.keys(COUNTERS);
+    resetBtn.disabled = resettable.every((key) => state[key] === COUNTERS[key].initial);
+    renderRoom();
   }
 
-  // Restart the skull's burst; the class comes off when the animation ends so the next one can play.
-  function glitch() {
-    glitchEl.classList.remove("is-glitching");
-    void glitchEl.offsetWidth;
-    glitchEl.classList.add("is-glitching");
-  }
-
-  glitchEl.addEventListener("animationend", (event) => {
-    if (event.target.classList.contains("slate__mark")) glitchEl.classList.remove("is-glitching");
-  });
-
-  // ---------- Skull expressions ----------
-
-  // Eye shapes from the interactionjackson.com skull (js/ij-skull.js); neutral is the one in assets/skull.svg.
-  const EYES = {
-    neutral:
-      "M31.2261 45.4653C31.6552 50.1612 28.5443 54.0475 24.1461 54.3174C19.6943 54.5872 16.3152 51.5106 15.8861 46.9766C15.4034 42.2807 18.3534 38.1786 22.3225 37.6928C26.6134 37.207 30.7434 40.6075 31.2261 45.4653ZM55.5234 45.5193C55.3625 49.8374 51.9298 53.2378 47.5316 53.2918C43.348 53.3998 40.0225 50.4311 39.808 46.5448C39.5398 42.1188 43.0798 38.1786 46.888 37.7468C51.0716 37.261 55.738 40.6615 55.5234 45.5193Z",
-    happy:
-      "M19.8346 48.6128C19.0976 49.155 18.024 48.6546 18.2863 47.7781C20.2859 41.0988 29.3597 41.0349 31.6507 47.5864C31.961 48.4737 30.8562 49.0029 30.0958 48.4502C26.8297 46.0766 23.2086 46.1308 19.8346 48.6128ZM41.4859 48.4502C40.7255 49.0029 39.6207 48.4737 39.931 47.5864C42.222 41.0349 51.2958 41.0988 53.2953 47.7781C53.5577 48.6546 52.4841 49.155 51.7471 48.6128C48.373 46.1308 44.7519 46.0766 41.4859 48.4502Z",
-    angry:
-      "M17.7818 41.776C17.773 40.411 19.1977 39.5737 20.4468 40.1242L30.98 44.7659C31.7054 45.0856 32.1946 45.8071 32.0872 46.5925C31.5341 50.6391 28.3828 52.9841 24.4362 52.5456C20.202 52.1221 17.8215 47.9912 17.7818 41.776ZM53.8189 41.776C53.8276 40.411 52.403 39.5737 51.1539 40.1242L40.6207 44.7659C39.8953 45.0856 39.4061 45.8071 39.5134 46.5925C40.0666 50.6391 43.2179 52.9841 47.1644 52.5456C51.3986 52.1221 53.7791 47.9912 53.8189 41.776Z",
-  };
-  const BLINK_CLOSE_MS = 75;
-  const BLINK_OPEN_MS = 125;
-  // Long enough to read the face after the 320ms glitch; another point change restarts it.
-  const MOOD_HOLD_MS = 900;
-
-  const eyesEl = document.getElementById("skull-eyes");
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  // The face the eyes are showing or blinking towards.
-  let mood = "neutral";
-  let moodTimer;
-  let blinkFrame = 0;
-
-  function paintEyes(next) {
-    eyesEl.setAttribute("d", EYES[next]);
-  }
-
-  // The site's blink: the eyes squash shut, swap shape, then open, pivoting on a fixed line so they don't jump.
-  function blinkTo(next) {
-    if (next === mood) return;
-    mood = next;
-    cancelAnimationFrame(blinkFrame);
-    eyesEl.removeAttribute("transform");
-    if (reducedMotion.matches) {
-      paintEyes(next);
+  function renderRoom() {
+    roomBtn.hidden = !roomsAvailable;
+    roomBtn.classList.toggle("is-live", Boolean(room));
+    roomBtn.classList.toggle("is-offline", Boolean(room && !room.connected));
+    if (!room) {
+      roomLabel.textContent = "Room";
+      roomBtn.setAttribute("aria-label", "Play in a room");
+      opponentEl.hidden = true;
       return;
     }
-    const start = performance.now();
-    let swapped = false;
-    const tick = (now) => {
-      const elapsed = now - start;
-      let scale;
-      if (elapsed < BLINK_CLOSE_MS) {
-        scale = 1 - (elapsed / BLINK_CLOSE_MS) ** 2;
-      } else {
-        if (!swapped) {
-          paintEyes(next);
-          swapped = true;
-        }
-        scale = 1 - (1 - Math.min(1, (elapsed - BLINK_CLOSE_MS) / BLINK_OPEN_MS)) ** 3;
-      }
-      eyesEl.setAttribute("transform", `translate(0 46) scale(1 ${scale}) translate(0 -46)`);
-      if (elapsed < BLINK_CLOSE_MS + BLINK_OPEN_MS) {
-        blinkFrame = requestAnimationFrame(tick);
-      } else {
-        eyesEl.removeAttribute("transform");
-        blinkFrame = 0;
-      }
-    };
-    blinkFrame = requestAnimationFrame(tick);
+
+    roomLabel.textContent = room.code;
+    roomBtn.setAttribute(
+      "aria-label",
+      `Room ${room.code}, ${room.connected ? "connected" : "offline"}. Room options`,
+    );
+
+    // One line about the other player: enough to see the room is live without becoming a second scoreboard.
+    const opponent = room.players[otherSeat(room.seat)];
+    opponentEl.hidden = !room.loaded;
+    opponentEl.classList.toggle("is-offline", Boolean(opponent && opponent.online === false));
+    if (!opponent) {
+      opponentEl.replaceChildren(`Waiting for an opponent · code ${room.code}`);
+    } else {
+      const name = document.createElement("span");
+      name.className = "opponent__name";
+      name.textContent = opponent.name;
+      const total = (opponent.primary || 0) + (opponent.secondary || 0);
+      const parts = [` · ${total} pts · ${opponent.cp || 0} CP`];
+      if (opponent.online === false) parts.push(" · offline");
+      opponentEl.replaceChildren(name, ...parts);
+    }
+
+    if (sheet.open && sheet.dataset.variant === "room") renderRoomSheet();
   }
 
-  function react(next) {
-    clearTimeout(moodTimer);
-    blinkTo(next);
-    moodTimer = setTimeout(() => blinkTo("neutral"), MOOD_HOLD_MS);
+  function renderRoomSheet() {
+    const seatName = room.players[room.seat]?.name || `Player ${room.seat === "p1" ? 1 : 2}`;
+    roomStatus.textContent = room.connected
+      ? `You're ${seatName} · Connected`
+      : `You're ${seatName} · Offline. Your changes will sync when you reconnect.`;
+    roomStatus.classList.toggle("is-offline", !room.connected);
   }
 
   // ---------- Actions ----------
 
   function commit(next) {
     state = next;
-    save();
+    if (!room) save();
     render();
   }
 
   function step(key, delta) {
     const value = clamp(key, state[key] + delta);
     if (value === state[key]) return;
-    beforeReset = null;
     hideToast();
     commit({ ...state, [key]: value });
+    if (room) {
+      if (key === "round") room.api.stepRound(delta);
+      else room.api.updateMine({ [key]: value });
+    }
     if (key !== "cp" || delta > 0) glitch();
     // Only scoring points changes the face; round and command points just glitch.
     if (key === "primary" || key === "secondary") react(delta > 0 ? "happy" : "angry");
@@ -204,23 +202,37 @@
   }
 
   // Reset acts immediately; the toast's Undo is the safety net instead of a confirm dialog.
+  // In a room it clears only your own scores: the round belongs to both players.
   function reset() {
-    beforeReset = state;
+    const before = state;
+    if (room) {
+      const api = room.api;
+      const cleared = pick(initialState(), OWN_KEYS);
+      commit({ ...state, ...cleared });
+      api.updateMine(cleared);
+      glitch();
+      showToast("Your scores reset", () => {
+        if (!room) return;
+        const restored = pick(before, OWN_KEYS);
+        commit({ ...state, ...restored });
+        api.updateMine(restored);
+        glitch();
+      });
+      return;
+    }
     commit(initialState());
     glitch();
-    showToast("Scores reset");
+    showToast("Scores reset", () => {
+      if (room) return;
+      commit(before);
+      glitch();
+    });
   }
 
-  function undoReset() {
-    if (!beforeReset) return;
-    commit(beforeReset);
-    glitch();
-    beforeReset = null;
-    hideToast();
-  }
-
-  function showToast(message) {
+  function showToast(message, undo = null) {
     toastText.textContent = message;
+    undoAction = undo;
+    undoBtn.hidden = !undo;
     toast.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(hideToast, 5000);
@@ -228,7 +240,233 @@
 
   function hideToast() {
     clearTimeout(toastTimer);
+    undoAction = null;
     toast.hidden = true;
+  }
+
+  function undo() {
+    const action = undoAction;
+    hideToast();
+    action?.();
+  }
+
+  // ---------- Room mode ----------
+
+  function enterRoom(api, { code, seat }) {
+    if (room) room.stop();
+    room = { api, code, seat, players: {}, connected: true, loaded: false, stop: () => {} };
+    writeStored(ROOM_KEY, { code });
+    // Until the room arrives, show a blank game rather than the solo one.
+    state = initialState();
+    hideToast();
+    render();
+    const joined = room;
+    joined.stop = api.watchRoom(code, (snapshot) => {
+      if (room === joined) applyRoom(snapshot);
+    });
+  }
+
+  function applyRoom({ exists, round, players, connected }) {
+    const mine = players[room.seat];
+    if (!exists || !mine) {
+      const code = leaveRoom();
+      showToast(`Room ${code} is no longer available`);
+      return;
+    }
+
+    const next = {
+      round: clamp("round", round),
+      ...Object.fromEntries(OWN_KEYS.map((key) => [key, clamp(key, Number(mine[key]) || 0)])),
+    };
+
+    // This phone's own taps already updated `state`, so any difference here came from elsewhere:
+    // the other player moving the round or scoring, or this seat on another device.
+    if (room.loaded) {
+      const opponentKey = otherSeat(room.seat);
+      const before = room.players[opponentKey] || {};
+      const after = players[opponentKey] || {};
+      const ownScoreDelta = next.primary + next.secondary - (state.primary + state.secondary);
+      const opponentScored = ["primary", "secondary"].some((key) => before[key] !== after[key]);
+      if (next.round !== state.round || next.cp > state.cp || ownScoreDelta || opponentScored) glitch();
+      if (ownScoreDelta) react(ownScoreDelta > 0 ? "happy" : "angry");
+    }
+
+    room.players = players;
+    room.connected = connected;
+    room.loaded = true;
+    state = next;
+    render();
+  }
+
+  // Back to solo play, with the solo game as it was. Returns the code of the room left.
+  function leaveRoom() {
+    const { api, code, stop } = room;
+    stop();
+    api.leaveRoom();
+    room = null;
+    writeStored(ROOM_KEY, null);
+    state = load();
+    hideToast();
+    render();
+    return code;
+  }
+
+  async function rejoin(code) {
+    try {
+      const api = await loadRoomApi();
+      enterRoom(api, await api.joinRoom(code, ""));
+    } catch (error) {
+      if (error?.code === "not-found" || error?.code === "full" || error?.code === "invalid-code") {
+        writeStored(ROOM_KEY, null);
+      }
+      showToast(`Couldn't rejoin room ${code}`);
+    }
+  }
+
+  function errorMessage(error, code) {
+    switch (error?.code) {
+      case "invalid-code":
+        return "Room codes are 4 letters and numbers, like K7QX.";
+      case "not-found":
+        return `There's no room ${code}. Check the code and try again.`;
+      case "full":
+        return `Room ${code} already has two players. You can still watch it on a display.`;
+      default:
+        return "Couldn't connect. Check your connection and try again.";
+    }
+  }
+
+  // ---------- Room sheet ----------
+
+  // Variants: "entry" (create or join), "join" (arrived from a room link), "room" (options for the room you're in).
+  function openSheet(variant, code = "") {
+    sheet.dataset.variant = variant;
+    sheet.querySelectorAll("[data-show]").forEach((el) => {
+      el.hidden = !el.dataset.show.split(" ").includes(variant);
+    });
+    sheetError.hidden = true;
+    joinBtn.classList.toggle("btn--primary", variant === "join");
+
+    if (variant === "room") {
+      sheetTitle.textContent = `Room ${room.code}`;
+      renderRoomSheet();
+    } else {
+      sheetTitle.textContent = variant === "join" ? `Join room ${code}` : "Play in a room";
+      codeInput.value = code;
+      nameInput.value = readStored(NAME_KEY) || "";
+      loadRoomApi().catch(() => {}); // warm up Firebase while they type
+    }
+
+    if (!sheet.open) sheet.showModal();
+    if (variant !== "room" && !nameInput.value) nameInput.focus();
+  }
+
+  function closeSheet() {
+    if (sheet.open) sheet.close();
+  }
+
+  // A room link has done its job once it's been acted on; the saved room handles reloads from here.
+  function dropRoomLink() {
+    if (!params.has("room")) return;
+    params.delete("room");
+    const query = params.toString();
+    history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+  }
+
+  sheet.addEventListener("close", dropRoomLink);
+
+  // Tapping the dimmed backdrop closes the sheet.
+  sheet.addEventListener("click", (event) => {
+    if (event.target === sheet) closeSheet();
+  });
+
+  function setBusy(busyBtn) {
+    entryForm.querySelectorAll("button").forEach((btn) => {
+      btn.disabled = Boolean(busyBtn);
+      btn.dataset.label ??= btn.textContent;
+      btn.textContent = btn === busyBtn ? "Connecting…" : btn.dataset.label;
+    });
+  }
+
+  function showSheetError(message) {
+    sheetError.textContent = message;
+    sheetError.hidden = false;
+  }
+
+  async function submitEntry(intent, submitter) {
+    const name = nameInput.value.trim();
+    const code = codeInput.value.trim().toUpperCase();
+    if (intent === "join" && !code) {
+      showSheetError("Enter the room code from the other player's screen.");
+      codeInput.focus();
+      return;
+    }
+    writeStored(NAME_KEY, name || null);
+    sheetError.hidden = true;
+    setBusy(submitter);
+    try {
+      const api = await loadRoomApi();
+      const joined = intent === "create" ? await api.createRoom(name) : await api.joinRoom(code, name);
+      if (room) leaveRoom();
+      enterRoom(api, joined);
+      closeSheet();
+      glitch();
+      showToast(intent === "create" ? `Room ${joined.code} created. Tap it to invite` : `Joined room ${joined.code}`);
+    } catch (error) {
+      if (!error?.code || !["invalid-code", "not-found", "full"].includes(error.code)) console.warn(error);
+      showSheetError(errorMessage(error, code));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  entryForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    // Pressing Enter in the code field means Join, even though Create is the form's first button.
+    const submitter =
+      document.activeElement === codeInput || !event.submitter ? joinBtn : event.submitter;
+    const intent = sheet.dataset.variant === "join" ? "join" : submitter.value;
+    submitEntry(intent, intent === "join" ? joinBtn : submitter);
+  });
+
+  async function watchInstead() {
+    let api;
+    try {
+      api = await loadRoomApi();
+    } catch {
+      showSheetError(errorMessage(null));
+      return;
+    }
+    const code = api.normalizeCode(codeInput.value);
+    if (!code) {
+      showSheetError("Enter a room code to watch, like K7QX.");
+      codeInput.focus();
+      return;
+    }
+    location.href = api.roomUrl("display.html", code);
+  }
+
+  async function copyLink(url, message) {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast(message);
+    } catch {
+      window.prompt("Copy this link", url);
+    }
+  }
+
+  async function invite() {
+    const url = room.api.roomUrl("./", room.code);
+    closeSheet();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Data Slate", text: `Join my game in room ${room.code}`, url });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+    copyLink(url, "Invite link copied");
   }
 
   // ---------- Events ----------
@@ -247,10 +485,47 @@
         reset();
         break;
       case "undo":
-        undoReset();
+        undo();
         break;
+      case "room":
+        openSheet(room ? "room" : "entry");
+        break;
+      case "close-sheet":
+        closeSheet();
+        break;
+      case "watch":
+        watchInstead();
+        break;
+      case "share-room":
+        invite();
+        break;
+      case "copy-display": {
+        const url = room.api.roomUrl("display.html", room.code);
+        closeSheet();
+        copyLink(url, "Display link copied");
+        break;
+      }
+      case "leave-room": {
+        closeSheet();
+        const code = leaveRoom();
+        glitch();
+        showToast(`Left room ${code}`, () => rejoin(code));
+        break;
+      }
     }
   });
 
   render();
+
+  // ---------- Boot into a room ----------
+
+  if (roomsAvailable) {
+    const linkCode = (params.get("room") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+    const saved = readStored(ROOM_KEY);
+    if (linkCode && linkCode === saved?.code) {
+      dropRoomLink();
+      rejoin(linkCode);
+    } else if (linkCode) openSheet("join", linkCode);
+    else if (saved?.code) rejoin(saved.code);
+  }
 })();

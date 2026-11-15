@@ -19,16 +19,21 @@
       href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=12" />
   </head>
   <body>
-    <!-- assets/skull.svg inlined once, so app.js can change the eyes on every copy of the skull at once. -->
+    <!-- assets/skull.svg inlined once, so fx.js can change the eyes on every copy of the skull at once. -->
     <svg class="skull-defs" aria-hidden="true" focusable="false" width="0" height="0">
       <path id="skull-outline" d="M22.0529 59.4592C11.2183 57.7859 3.9238 49.4197 3.11925 37.8688C2.10016 26.156 7.67834 13.7956 17.3329 7.69627C23.5011 3.75603 31.0102 2.35266 38.1438 3.27025C48.1738 3.81001 57.882 10.1252 63.7283 19.3551C69.3602 28.2611 70.6474 37.2211 66.6247 46.6129C63.2992 54.3854 57.1847 58.4876 48.6565 59.783C47.9725 62.5609 48.6754 67.9642 44.1469 67.9642C39.6183 67.9642 39.5667 63.5745 39.6456 59.9989C39.2472 63.425 39.5383 67.9642 34.9256 67.7175C30.3375 67.7175 31.0969 63.0142 30.9565 60.5387C30.5325 63.8098 30.7487 68.2033 26.3719 68.2033C21.9188 68.2033 22.0969 63.0142 22.0529 59.4592Z" fill="none" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round" stroke="#11FF00" />
       <path id="skull-eyes" d="M31.2261 45.4653C31.6552 50.1612 28.5443 54.0475 24.1461 54.3174C19.6943 54.5872 16.3152 51.5106 15.8861 46.9766C15.4034 42.2807 18.3534 38.1786 22.3225 37.6928C26.6134 37.207 30.7434 40.6075 31.2261 45.4653ZM55.5234 45.5193C55.3625 49.8374 51.9298 53.2378 47.5316 53.2918C43.348 53.3998 40.0225 50.4311 39.808 46.5448C39.5398 42.1188 43.0798 38.1786 46.888 37.7468C51.0716 37.261 55.738 40.6615 55.5234 45.5193Z" fill="#11FF00" />
     </svg>
     <main class="slate">
       <header class="slate__header">
+        <!-- Hidden until rooms are set up (firebase-config.js). In a room it shows the code and a connection dot. -->
+        <button class="pill-btn room-pill" type="button" data-action="room" aria-haspopup="dialog" hidden>
+          <span class="room-pill__dot" aria-hidden="true"></span>
+          <span data-room-label>Room</span>
+        </button>
         <!-- Each copy draws the shared skull shapes defined at the top of <body>.
              The two slice copies only show during a glitch burst; see .glitch in styles.css. -->
         <span class="glitch" data-glitch>
@@ -37,6 +42,7 @@
           <svg class="glitch__slice" aria-hidden="true" focusable="false" viewBox="0 0 72 72" width="72" height="72"><use href="#skull-outline" /><use href="#skull-eyes" /></svg>
         </span>
         <button class="pill-btn" type="button" data-action="reset">Reset</button>
+        <p class="opponent" data-opponent aria-live="polite" hidden></p>
       </header>
 
       <div class="slate__row slate__row--top">
@@ -80,6 +86,40 @@
       <button class="toast__action" type="button" data-action="undo">Undo</button>
     </div>
 
+    <!-- One sheet for rooms: create or join ("entry"), join from a link ("join"), or options for the room you're in ("room").
+         app.js shows the elements whose data-show lists the current variant. -->
+    <dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="sheet-title" data-sheet-title>Play in a room</h2>
+        <button class="sheet__close" type="button" data-action="close-sheet" aria-label="Close">
+          <svg class="icon" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path transform="rotate(45 12 12)" d="M0 12C0 12.8284 0.671573 13.5 1.5 13.5H10.25C10.3881 13.5 10.5 13.6119 10.5 13.75V22.5C10.5 23.3284 11.1716 24 12 24C12.8284 24 13.5 23.3284 13.5 22.5V13.75C13.5 13.6119 13.6119 13.5 13.75 13.5H22.5C23.3284 13.5 24 12.8284 24 12C24 11.1716 23.3284 10.5 22.5 10.5H13.75C13.6119 10.5 13.5 10.3881 13.5 10.25V1.5C13.5 0.671573 12.8284 0 12 0C11.1716 0 10.5 0.671573 10.5 1.5V10.25C10.5 10.3881 10.3881 10.5 10.25 10.5H1.5C0.671573 10.5 0 11.1716 0 12Z" fill="currentColor"/> </svg>
+        </button>
+      </div>
+
+      <form class="sheet__body" data-sheet-entry data-show="entry join" novalidate>
+        <label class="field">
+          <span class="field__label">Your name</span>
+          <input class="field__input" name="name" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" enterkeyhint="go" placeholder="Player 1" />
+        </label>
+        <button class="btn btn--primary" type="submit" name="intent" value="create" data-show="entry">Create room</button>
+        <p class="sheet__or" data-show="entry">or join one</p>
+        <label class="field" data-show="entry">
+          <span class="field__label">Room code</span>
+          <input class="field__input field__input--code" name="code" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="join" placeholder="K7QX" />
+        </label>
+        <button class="btn" type="submit" name="intent" value="join">Join room</button>
+        <p class="sheet__error" data-sheet-error role="alert" hidden></p>
+        <button class="link-btn" type="button" data-action="watch" data-show="entry">Watch a room on a display</button>
+      </form>
+
+      <div class="sheet__body" data-show="room" hidden>
+        <p class="sheet__status" data-room-status aria-live="polite"></p>
+        <button class="btn btn--primary" type="button" data-action="share-room">Invite player</button>
+        <button class="btn" type="button" data-action="copy-display">Copy display link</button>
+        <button class="btn btn--danger" type="button" data-action="leave-room">Leave room</button>
+      </div>
+    </dialog>
+
     <template id="stepper-tpl">
       <button class="step step--minus" type="button" data-step="-1">
         <svg class="icon" aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M1.5 13.5H22.5C23.3284 13.5 24 12.8284 24 12C24 11.1716 23.3284 10.5 22.5 10.5H1.5C0.671573 10.5 0 11.1716 0 12C0 12.8284 0.671573 13.5 1.5 13.5Z" fill="currentColor"/> </svg>
@@ -89,6 +129,8 @@
       </button>
     </template>
 
-    <script src="app.js?v=7"></script>
+    <script src="firebase-config.js?v=2"></script>
+    <script src="fx.js?v=1"></script>
+    <script src="app.js?v=8"></script>
   </body>
 </html>
